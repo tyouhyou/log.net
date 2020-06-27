@@ -4,8 +4,8 @@ using System.Runtime.CompilerServices;
 
 namespace zb
 {
-    /// 
-    ///
+    /// <summary>
+    /// </summary>
     ///<remarks>
     /// TODO: 
     /// 1. outputting to multiple files
@@ -45,35 +45,35 @@ namespace zb
             }
         }
 
-        private static string Output(string msg, LogLevel lv, 
+        private static void Output(string msg, LogLevel lv, 
             string path=null, 
-            string line=null,
+            int line=0,
             string fn=null)
         {
             if (lv < LogLv) return;
 
-            var p = null != path ? $"[{Path.GetFileName(path)}]" : string.empty;
-            var f = null != fn ? $"[{fn}]" : string.empty;
-            var l = null != line ? $"[{line}]" : string.empty;
+            var p = null != path ? $"[{Path.GetFileName(path)}]" : string.Empty;
+            var f = null != fn ? $"[{fn}]" : string.Empty;
+            var l = 0 != line ? $"[{line}]" : string.Empty;
 
             WriteLog(LogFile, $"[{lv}][{DateTime.Now}]{p}{l}{f} - {msg}");
         }
 
-        public static void D(string msg) => Output(msg, LogLevel.DEBUG,
+        public static void D(string msg, 
             [CallerFilePath] string sourceFilePath = "",
             [CallerLineNumber] int sourceLineNumber = 0,
-            [CallerMemberName] string memberName = ""
-            );
+            [CallerMemberName] string memberName = "" )
+            => Output(msg, LogLevel.DEBUG, sourceFilePath, sourceLineNumber, memberName);
 
         public static void I(string msg) => Output(msg, LogLevel.INFO);
 
         public static void W(string msg) => Output(msg, LogLevel.WARN);
 
-        public static void E(string msg) => Output(msg, LogLevel.ERROR,
+        public static void E(string msg,
             [CallerFilePath] string sourceFilePath = "",
             [CallerLineNumber] int sourceLineNumber = 0,
-            [CallerMemberName] string memberName = ""
-            );
+            [CallerMemberName] string memberName = "")
+            => Output(msg, LogLevel.ERROR, sourceFilePath, sourceLineNumber, memberName);
 
         private static void WriteLog(string file, string msg)
         {
@@ -85,7 +85,7 @@ namespace zb
                     f.WriteLine(msg);
                 }
             }
-            catch(exception)
+            catch(Exception)
             {
                 // DO NOTHING
             }
