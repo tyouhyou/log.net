@@ -26,13 +26,13 @@ The outputs look like this:
 - .Net Framework 4.5 and above, 
 
 ## Introduction
+As you might notice, there has extra information at the beginning of the log line, before the message you passed. The extra information inludes log level, logging time stamp, etc. And in DEBUG and ERROR logs, code file name, code line, method name are also included.
+
 Do not use Log class instance to output log messages. In fact, instance can not be created by using ```new Log();``` Do not bother with the boring stuffs. Just pass your messages to the public static methods in Log class:
 - D(string msg) : outputing debug message
 - I(string msg) : outputing info message
 - W(string msg) : outputing warning message
 - E(string msg) : outputing error message
-
-As you might notice, there has extra information at the beginning of the log line, before the message you passed. The extra information inludes log level, logging time stamp, etc. And in DEBUG and ERROR logs, code file name, code line, method name are also included.
 
 ## Specify log file(s)
 To tell the methods to which file to output the messages, you have to choice.
@@ -51,7 +51,7 @@ You can set messages at which level and above can be logged. The default log lev
 In your product, sometimes even INFO is not desired I guess. In that case, before any logging methods called, ```Log.LogLevel = Log.Level.WARN;``` will do the trick. Now debug and info messages shut up, just WARN and ERROR will go to log file(s).
 
 ## Performance
-To make outputting faster, the log file is not be closed during the application life time. It will be closed automatically when the process exits. If this is not the way desired, set preprocessor constants ```LOG_CLOSE_FILE``` in the project file. This trick will make the log file to be openned for writing and closed after writing ends.
+To make outputting faster, the log file is not closed during the application life span. It will be closed automatically when the process exits. If this is not the way desired, set preprocessor constants ```LOG_CLOSE_FILE``` in the project file. This trick will make the log file to be openned for writing and closed after writing ends.
 
 Open-and-Close each time causes bad performance. On my PC, it's 100~1000 times slower than Not-Close-File.
 
