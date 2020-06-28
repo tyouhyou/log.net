@@ -24,10 +24,10 @@ namespace Lognet
             for(var i = 0; i < testcount; i++)
             {
                 Log.LogLevel = Log.Level.DEBUG;
-                Log.D("Hello debug");
+                Log.D("Hello bugs");
                 Log.I("For your information");
-                Log.W("Warn, the sky is falling.");
-                Log.E("Oh what's wrong, the sky fallen.");
+                Log.W("Caution, the sky is falling.");
+                Log.E("Oh what's wrong, the sky fell.");
 
                 Test.StaticLogs();
                 test.Logs().AnotherLog();
