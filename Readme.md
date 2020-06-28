@@ -32,7 +32,7 @@ Do not use Log class instance to output log messages. In fact, instance can not 
 - W(string msg) : outputing warning message
 - E(string msg) : outputing error message
 
-As you may noticed, there has extra information at the beginning of the log line, before the message you passed. The extra information inludes log level, logging time stamp, etc. And in DEBUG and ERROR logs, code file name, code line, method name are also included.
+As you might notice, there has extra information at the beginning of the log line, before the message you passed. The extra information inludes log level, logging time stamp, etc. And in DEBUG and ERROR logs, code file name, code line, method name are also included.
 
 ## Specify log file(s)
 To tell the methods to which file to output the messages, you have to choice.
