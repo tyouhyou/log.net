@@ -58,4 +58,5 @@ Open-and-Close each time causes bad performance. On my PC, it's 100~1000 times s
 ## Thread safe
 By default, the outputting is not thread safe. To make it enabled, setting preprocessor constants of ```LOG_LOCK``` will do the trick.
 
+*******
 Enjoy, and any bug reporting and suggestion is welcome.
