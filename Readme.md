@@ -3,6 +3,7 @@
 This is a logging utility for .Net projects.
 
 *TL;NR*
+
 Outputting logs is very easy. Include Log.cs in your project and code like this:
 ```
 using zb;
