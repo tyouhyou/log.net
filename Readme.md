@@ -35,7 +35,7 @@ Do not use Log class instance to output log messages. In fact, instance can not 
 - E(string msg) : outputing error message
 
 ## Specify log file(s)
-To tell the methods to which file to output the messages, you have to choice.
+To tell the methods to which file to output the messages, there have two choices
 1. If only one log file in the projects, ```Log.LogFile = "test/result.log";``` before any log method being called. And call logging methods with one argument, e.g. ```Log.E(msg);```
 2. If multiple log files is desired, pass two arguments to the logging methods. The first one is message and the second one is log file. e.g. ```Log.W(msg, file);```
 
