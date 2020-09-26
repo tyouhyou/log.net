@@ -1,4 +1,4 @@
-#define LOG_CLOSE_FILE
+//#define LOG_CLOSE_FILE
 
 using System;
 using System.Collections.Generic;
