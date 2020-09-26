@@ -1,5 +1,8 @@
+#define LOG_CLOSE_FILE
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -11,6 +14,7 @@ namespace zb
         public enum Level
         {
             DEBUG = 0,
+            PERF,
             INFO,
             WARN,
             ERROR,
@@ -56,6 +60,8 @@ namespace zb
             [CallerLineNumber] int sourceLineNumber = 0,
             [CallerMemberName] string memberName = null)
             => Output(msg, Log.Level.DEBUG, file, sourceFilePath, sourceLineNumber, memberName);
+
+        public static void P(string msg, string file = null) => Output(msg, Log.Level.PERF, file);
 
         public static void I(string msg, string file = null) => Output(msg, Log.Level.INFO, file);
 
@@ -103,7 +109,7 @@ namespace zb
                 log = LogList[fi];
             }
             
-            log.OutputLog($"[{lv}][{DateTime.Now}]{p}{l}{f} - {msg}");
+            log.OutputLog($"[{lv,-5}][{DateTime.Now}]{p}{l}{f} - {msg}");
         }
 
 #endregion  // Static Members
@@ -165,5 +171,73 @@ namespace zb
         }
 
 #endregion // Instance Members
+    }
+
+    public class Perf
+    {
+#region static Members
+
+        private static Stopwatch _MyStaticWatch;
+
+        ///
+        /// Start the stopwatch
+        ///
+        public static void S()
+        {
+            if (null == _MyStaticWatch)
+            {
+                _MyStaticWatch = new Stopwatch();
+            }
+            _S(_MyStaticWatch);
+        }
+
+        ///
+		/// Record elaspsd time without stop the stopwatch
+		///
+        public static void R(string msg, string file = null) => _R(_MyStaticWatch, msg, file);
+
+        ///
+        /// Record elaspsd time and stop the stopwatch
+        ///
+        public static void E(string msg, string file = null) => _E(_MyStaticWatch, msg, file);
+
+        ///
+		/// Destroy the stopwatch
+        ///
+        public static void D()
+        {
+            _MyStaticWatch = null;
+        }
+
+        private static void _S(Stopwatch sw)
+        {
+            sw.Restart();
+        }
+	
+		private static void _R(Stopwatch sw, string msg, string file = null)
+		{
+			var ns = sw.Elapsed.TotalMilliseconds * 1000000;
+            Log.P(msg + $" ([{sw.ElapsedMilliseconds} ms] or [{ns} ns])", file);
+		}
+
+        private static void _E(Stopwatch sw, string msg, string file = null)
+        {
+            sw.Stop();
+            _R(sw, msg, file);
+        }
+
+#endregion
+        
+#region instance members
+
+        private Stopwatch _MyWatch = new Stopwatch();
+
+        public void Start() => Perf._S(_MyWatch);
+
+        public void Record(string msg, string file = null) => Perf._R(_MyWatch, msg, file); 
+
+        public void Stop(string msg, string file = null) => Perf._E(_MyWatch, msg, null);
+
+#endregion
     }
 }

@@ -1,0 +1,10 @@
+DIR="test/"
+if [ ! -d "$DIR" ]; then
+    mkdir "$DIR"
+fi
+
+mcs -out:test/test.exe -m:Lognet.Program -platform:anycpu *.cs src/*.cs
+
+if [ $? -eq 0 ]; then
+    mono test/test.exe
+fi

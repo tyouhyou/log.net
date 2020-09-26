@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+
+using System;
 using zb;
 
 namespace Lognet
@@ -7,34 +8,45 @@ namespace Lognet
     {
         static void Main(string[] args)
         {
-            Log.LogFile = "test/result.log";
-
-            var testcount = 1001;
-            var test = new Test();
-
-            if (null != args && args.Length > 0)
+            try 
             {
-                int.TryParse(args[0], out testcount);
+                AppDomain.CurrentDomain.UnhandledException += (o, e) =>
+                {
+                    Log.O(((Exception)e.ExceptionObject).ToString());
+                };
+
+                Log.LogFile = "test/result.log";
+
+                var testcount = 1001;
+                var test = new Test();
+
+                if (null != args && args.Length > 0)
+                {
+                    int.TryParse(args[0], out testcount);
+                }
+                Log.O($"Test count: {testcount}");
+
+                var p = new Perf();
+                p.Start();
+
+                for(var i = 0; i < testcount; i++)
+                {
+                    Log.LogLevel = Log.Level.DEBUG;
+                    Log.D("Hello bugs");
+                    Log.I("For your information");
+                    Log.W("Caution, the sky is falling.");
+                    Log.E("Oh what's wrong, the sky fell.");
+
+                    Test.StaticLogs();
+                    test.Logs().AnotherLog();
+                }
+
+                p.Stop("Test#Program");
             }
-            Log.O($"Test count: {testcount}");
-
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
-            for(var i = 0; i < testcount; i++)
+            catch(Exception e)
             {
-                Log.LogLevel = Log.Level.DEBUG;
-                Log.D("Hello bugs");
-                Log.I("For your information");
-                Log.W("Caution, the sky is falling.");
-                Log.E("Oh what's wrong, the sky fell.");
-
-                Test.StaticLogs();
-                test.Logs().AnotherLog();
+                Log.E(e.ToString());
             }
-
-            sw.Stop();
-            Log.O($"Elaspsed: {sw.Elapsed.TotalMilliseconds} ms.");
         }
     }
 }
