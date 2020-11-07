@@ -236,7 +236,7 @@ namespace zb
 
         public void Record(string msg, string file = null) => Perf._R(_MyWatch, msg, file); 
 
-        public void Stop(string msg, string file = null) => Perf._E(_MyWatch, msg, null);
+        public void Stop(string msg, string file = null) => Perf._E(_MyWatch, msg, file);
 
 #endregion
     }

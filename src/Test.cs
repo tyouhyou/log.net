@@ -16,28 +16,30 @@ class Test
 
     public Test Logs()
     {
-        Perf.S();
+        var p = new Perf();
+        p.Start();
 
         Log.D("Debug--");
         Log.I("Info--");
         Log.W("Warn--");
         Log.E("Error--");
 
-        Perf.E("Test#Logs");
+        p.Stop("Test#Logs");
 
         return this;
     }
 
     public Test AnotherLog()
     {
-        Perf.S();
+        var p = new Perf();
+        p.Start();
 
         DF("Debug---");
         IF("Info---");
         WF("Warn---");
         EF("Error---");
 
-        Perf.E("Test#AnotherLog", "test/another.log");
+        p.Stop("Test#AnotherLog", "test/another.log");
 
         return this;
     }
