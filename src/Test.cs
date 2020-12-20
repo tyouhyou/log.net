@@ -4,19 +4,20 @@ class Test
 {
     public static void StaticLogs()
     {
-        Perf.S();
+        PerfLog.S();
 
         Log.D("Debug-");
         Log.I("Info-");
         Log.W("Warn-");
         Log.E("Error-");
 
-        Perf.E("Test#StaticLogs");
+        PerfLog.L("Test#StaticLogs");
+        PerfLog.E();
     }
 
     public Test Logs()
     {
-        var p = new Perf();
+        var p = new PerfLog();
         p.Start();
 
         Log.D("Debug--");
@@ -24,14 +25,15 @@ class Test
         Log.W("Warn--");
         Log.E("Error--");
 
-        p.Stop("Test#Logs");
+        p.Elapsed("Test#Logs");
+        p.Stop();
 
         return this;
     }
 
     public Test AnotherLog()
     {
-        var p = new Perf();
+        var p = new PerfLog();
         p.Start();
 
         DF("Debug---");
@@ -39,7 +41,8 @@ class Test
         WF("Warn---");
         EF("Error---");
 
-        p.Stop("Test#AnotherLog", "test/another.log");
+        p.Wrap("Test#AnotherLog", "test/another.log");
+        p.Stop();
 
         return this;
     }

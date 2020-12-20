@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <!-- <DefineConstants>LOG_CLOSE_FILE</DefineConstants> -->
+    <TargetFramework>net5.0</TargetFramework>
+    <!-- <DefineConstants>LOG_FILE_KEEP_OPENNING</DefineConstants> -->
+    <DefineConstants>LOG_LOCK</DefineConstants>
   </PropertyGroup>
 
 </Project>

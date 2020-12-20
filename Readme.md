@@ -15,10 +15,10 @@ Log.E("What's wrong? Heaven fell!");
 ```
 The outputs look like this:
 ```
-[DEBUG][2020/06/28 13:56:21][Test.cs][27][Main] - De bugs
+[2020/06/28 13:56:21][DEBUG][Test.cs(27)::Main] - De bugs
 [INFO][2020/06/28 13:56:21] - For your information
 [WARN][2020/06/28 13:56:21] - Caution, the sky is falling!
-[ERROR][2020/06/28 13:56:21][Test.cs][30][Main] - What's wrong? Heaven fell!
+[ERROR][2020/06/28 13:56:21][Test.cs(30)::Main] - What's wrong? Heaven fell!
 ```
 
 *Support*
@@ -51,12 +51,13 @@ You can set messages at which level and above can be logged. The default log lev
 In your product, sometimes even INFO is not desired I guess. In that case, before any logging methods called, ```Log.LogLevel = Log.Level.WARN;``` will do the trick. Now debug and info messages shut up, just WARN and ERROR will go to log file(s).
 
 ## Performance
-To make outputting faster, the log file is not closed during the application life span. It will be closed automatically when the process exits. If this is not the way desired, set preprocessor constants ```LOG_CLOSE_FILE``` in the project file. This trick will make the log file to be openned for writing and closed after writing ends.
+By default, the log file will be openned and closed each time outputting is done. This makes the performance worse. 
+If checking on log alway occurs after application ended, add DefineConstants ```LOG_FILE_KEEP_OPENNING``` in the project file before build your project. This flag tells logger just open the log file once and do not close it unless the process exits. It make outputting 20~100 times faster.
 
-Open-and-Close each time causes bad performance. On my PC, it's 100~1000 times slower than Not-Close-File.
 
 ## Thread safe
-By default, the outputting is not thread safe. To make it enabled, setting preprocessor constants of ```LOG_LOCK``` will do the trick.
+By default, the outputting is not thread safe. To make it enabled, add DefineConstants of ```LOG_LOCK``` to project file.
+Also, locking make performance not good, so add it just when it's really needed.
 
 *******
 Enjoy, and any bug reporting and suggestion is welcome.

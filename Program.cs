@@ -26,7 +26,7 @@ namespace Lognet
                 }
                 Log.O($"Test count: {testcount}");
 
-                var p = new Perf();
+                var p = new PerfLog();
                 p.Start();
 
                 for(var i = 0; i < testcount; i++)
@@ -41,7 +41,10 @@ namespace Lognet
                     test.Logs().AnotherLog();
                 }
 
-                p.Stop("Test#Program");
+                p.Wrap("Test#Program");
+                p.Stop();
+
+                Log.O("Test ended.");
             }
             catch(Exception e)
             {

@@ -1,5 +1,3 @@
-//#define LOG_CLOSE_FILE
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,12 +19,12 @@ namespace zb
             NONE,
         }
 
-#region  Static Members
+        #region  Static Members
 
         private static string _LogFile = Assembly.GetEntryAssembly().GetName().Name + ".log";
         public static string LogFile
         {
-            set { _LogFile = value; }
+            set { _LogFile = Path.GetFullPath(value); }
             get { return _LogFile; }
         }
 
@@ -43,10 +41,11 @@ namespace zb
         }
 
         private static Dictionary<string, Log> LogList = new Dictionary<string, Log>();
-        
+
         static Log()
         {
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler((s,e)=>{
+            AppDomain.CurrentDomain.ProcessExit += new EventHandler((s, e) =>
+            {
                 foreach (var kv in LogList)
                 {
                     kv.Value.Dispose();
@@ -54,7 +53,7 @@ namespace zb
             });
         }
 
-        public static void D(string msg, 
+        public static void D(string msg,
             string file = null,
             [CallerFilePath] string sourceFilePath = null,
             [CallerLineNumber] int sourceLineNumber = 0,
@@ -67,7 +66,7 @@ namespace zb
 
         public static void W(string msg, string file = null) => Output(msg, Log.Level.WARN, file);
 
-        public static void E(string msg, 
+        public static void E(string msg,
             string file = null,
             [CallerFilePath] string sourceFilePath = null,
             [CallerLineNumber] int sourceLineNumber = 0,
@@ -75,49 +74,63 @@ namespace zb
             => Output(msg, Log.Level.ERROR, file, sourceFilePath, sourceLineNumber, memberName);
 
         // Output to stdout
-        public static void O(string msg, 
+        public static void O(string msg,
             [CallerFilePath] string file = null,
             [CallerLineNumber] int line = 0,
             [CallerMemberName] string func = null)
         {
-            Console.Out.WriteLine($"[{DateTime.Now}][{Path.GetFileName(file)}][line][func] - {msg}");
+            Console.Out.WriteLine($"[{DateTime.Now}][{Path.GetFileName(file)}({line})::{func}] {msg}");
         }
 
         private static void Output(
-            string msg, 
-            Log.Level lv, 
+            string msg,
+            Log.Level lv,
             string file,
-            string path=null, 
-            int line=0,
-            string fn=null)
+            string path = null,
+            int line = 0,
+            string fn = null)
         {
             if (lv < LogLevel) return;
 
-            var p = null != path ? $"[{Path.GetFileName(path)}]" : string.Empty;
-            var f = null != fn ? $"[{fn}]" : string.Empty;
-            var l = 0 != line ? $"[{line}]" : string.Empty;
-            var fi = Path.GetFullPath(null != file ? file : LogFile).ToLowerInvariant();
+            try
+            {
+                var p = null != path ? $"{Path.GetFileName(path)}" : string.Empty;
+                var f = null != fn ? $"{fn}" : string.Empty;
+                var l = 0 != line ? $"{line}" : string.Empty;
+                string fi;
+                
+                if (null != file)
+                {
+                    fi = Path.GetFullPath(file).ToLowerInvariant();
+                }
+                else
+                {
+                    fi = LogFile;
+                }
 
-            Log log = null;
-            if (!LogList.ContainsKey(fi))
-            {
-                log = new Log(fi);
-                LogList.Add(fi, log);
+                Log log = null;
+                if (!LogList.ContainsKey(fi))
+                {
+                    log = new Log(fi);
+                    LogList.Add(fi, log);
+                }
+                else
+                {
+                    log = LogList[fi];
+                }
+
+                var fili = string.IsNullOrWhiteSpace(p) ? string.Empty : $"[{p}({l})::{f}]";
+                log.OutputLog($"[{DateTime.Now}][{lv,-5}]{fili} {msg}");
             }
-            else
-            {
-                log = LogList[fi];
-            }
-            
-            log.OutputLog($"[{lv,-5}][{DateTime.Now}]{p}{l}{f} - {msg}");
+            catch(Exception){/* Do Nothing */}
         }
 
-#endregion  // Static Members
+        #endregion  // Static Members
 
-#region Instance Memebers
+        #region Instance Memebers
 
         private string MyFile { get; set; }
-#if !LOG_CLOSE_FILE
+#if LOG_FILE_KEEP_OPENNING
         private StreamWriter SW { get; set; }
 #endif
 #if LOG_LOCK
@@ -131,7 +144,7 @@ namespace zb
                 throw new ArgumentNullException("Log file could not be null or empty.");
             }
             MyFile = file;
-#if !LOG_CLOSE_FILE
+#if LOG_FILE_KEEP_OPENNING
             SW = new StreamWriter(MyFile, true);
 #endif
         }
@@ -143,7 +156,7 @@ namespace zb
 
         private void Dispose()
         {
-#if !LOG_CLOSE_FILE
+#if LOG_FILE_KEEP_OPENNING
             if (null != SW) SW.Dispose();
 #endif
         }
@@ -154,30 +167,36 @@ namespace zb
             lock(locker)
             {
 #endif
-                if (null == msg) return;
-#if LOG_CLOSE_FILE
+            if (null == msg) return;
+#if !LOG_FILE_KEEP_OPENNING
                 using (StreamWriter fsw = new StreamWriter(MyFile, true))
                 {
                     fsw.WriteLine(msg);
                 }
 #else
-                SW.WriteLine(msg);
-                SW.Flush();
+            SW.WriteLine(msg);
+            SW.Flush();
 #endif
-                
+
 #if LOG_LOCK
             }
 #endif
         }
 
-#endregion // Instance Members
+        #endregion // Instance Members
     }
 
-    public class Perf
+    ///
+    /// Usually, using a instance of a this class is sufficient.
+    /// However, there has cases that meseauring performance across
+    /// functions or even classes. Using the static methods instead of
+    /// instancial ones may be desired.
+    ///
+    public class PerfLog
     {
-#region static Members
+        #region static Members
 
-        private static Stopwatch _MyStaticWatch;
+        private static PerfLog _MyStaticWatch;
 
         ///
         /// Start the stopwatch
@@ -186,58 +205,55 @@ namespace zb
         {
             if (null == _MyStaticWatch)
             {
-                _MyStaticWatch = new Stopwatch();
+                _MyStaticWatch = new PerfLog();
             }
-            _S(_MyStaticWatch);
+            _MyStaticWatch.Start();
         }
+
+        ///
+        /// Wrap the elasped time since last wrapping.
+        ///
+        public static void R(string msg, string file = null) => _MyStaticWatch.Wrap(msg, file);
 
         ///
 		/// Record elaspsd time without stop the stopwatch
 		///
-        public static void R(string msg, string file = null) => _R(_MyStaticWatch, msg, file);
+        public static void L(string msg, string file = null) => _MyStaticWatch.Elapsed(msg, file);
 
         ///
         /// Record elaspsd time and stop the stopwatch
         ///
-        public static void E(string msg, string file = null) => _E(_MyStaticWatch, msg, file);
+        public static void E() => _MyStaticWatch.Stop();
 
-        ///
-		/// Destroy the stopwatch
-        ///
-        public static void D()
-        {
-            _MyStaticWatch = null;
-        }
+        #endregion
 
-        private static void _S(Stopwatch sw)
-        {
-            sw.Restart();
-        }
-	
-		private static void _R(Stopwatch sw, string msg, string file = null)
-		{
-			var ns = sw.Elapsed.TotalMilliseconds * 1000000;
-            Log.P(msg + $" ([{sw.ElapsedMilliseconds} ms] or [{ns} ns])", file);
-		}
-
-        private static void _E(Stopwatch sw, string msg, string file = null)
-        {
-            sw.Stop();
-            _R(sw, msg, file);
-        }
-
-#endregion
-        
-#region instance members
+        #region instance members
 
         private Stopwatch _MyWatch = new Stopwatch();
+        private long _LastElaspsed = 0;
 
-        public void Start() => Perf._S(_MyWatch);
+        public void Start()
+        {
+            _MyWatch.Restart();
+        }
 
-        public void Record(string msg, string file = null) => Perf._R(_MyWatch, msg, file); 
+        public void Wrap(string msg, string file = null)
+        {
+            var elps = _MyWatch.ElapsedMilliseconds;
+            Log.P(msg + $" ({elps - _LastElaspsed} ms)", file);
+            _LastElaspsed = elps;
+        }
 
-        public void Stop(string msg, string file = null) => Perf._E(_MyWatch, msg, file);
+        public void Elapsed(string msg, string file = null)
+        {
+            Log.P(msg + $" ({_MyWatch.ElapsedMilliseconds} ms)", file);
+        }
 
-#endregion
+        public void Stop() 
+        {
+            _MyWatch.Stop();
+        }
+
+        #endregion
     }
 }
