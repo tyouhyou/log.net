@@ -5,7 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace zb
+namespace zb.Lib.Logger
 {
     public class Log
     {
@@ -21,11 +21,23 @@ namespace zb
 
         #region  Static Members
 
-        private static string _LogFile = Assembly.GetEntryAssembly().GetName().Name + ".log";
+        public static string DefaultLogFile = Assembly.GetEntryAssembly().GetName().Name + ".log";
+
+        private static string _LogFile = null;
+        /// <sumary>
+        /// If no log file is set, all logs will be writen to Trace.
+        /// </sumary>
         public static string LogFile
         {
-            set { _LogFile = Path.GetFullPath(value); }
-            get { return _LogFile; }
+            set
+            {
+                _LogFile = Path.GetFullPath(value);
+                MyLog = new Log(_LogFile);
+            }
+            get
+            {
+                return _LogFile;
+            }
         }
 
 #if DEBUG
@@ -40,17 +52,18 @@ namespace zb
             get { return _LogLevel; }
         }
 
-        private static Dictionary<string, Log> LogList = new Dictionary<string, Log>();
+        private static Log MyLog { set; get; }
+
+#if MULT_LOGS
+        private static Dictionary<string, Log> LogList { set; get; }
+#endif
 
         static Log()
         {
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler((s, e) =>
-            {
-                foreach (var kv in LogList)
-                {
-                    kv.Value.Dispose();
-                }
-            });
+            MyLog = new Log(null);
+#if MULT_LOGS
+            LogList = new Dictionary<string, Log>();
+#endif
         }
 
         public static void D(string msg,
@@ -60,11 +73,14 @@ namespace zb
             [CallerMemberName] string memberName = null)
             => Output(msg, Log.Level.DEBUG, file, sourceFilePath, sourceLineNumber, memberName);
 
-        public static void P(string msg, string file = null) => Output(msg, Log.Level.PERF, file);
+        public static void P(string msg, string file = null)
+            => Output(msg, Log.Level.PERF, file);
 
-        public static void I(string msg, string file = null) => Output(msg, Log.Level.INFO, file);
+        public static void I(string msg, string file = null)
+            => Output(msg, Log.Level.INFO, file);
 
-        public static void W(string msg, string file = null) => Output(msg, Log.Level.WARN, file);
+        public static void W(string msg, string file = null)
+            => Output(msg, Log.Level.WARN, file);
 
         public static void E(string msg,
             string file = null,
@@ -72,15 +88,6 @@ namespace zb
             [CallerLineNumber] int sourceLineNumber = 0,
             [CallerMemberName] string memberName = null)
             => Output(msg, Log.Level.ERROR, file, sourceFilePath, sourceLineNumber, memberName);
-
-        // Output to stdout
-        public static void O(string msg,
-            [CallerFilePath] string file = null,
-            [CallerLineNumber] int line = 0,
-            [CallerMemberName] string func = null)
-        {
-            Console.Out.WriteLine($"[{DateTime.Now}][{Path.GetFileName(file)}({line})::{func}] {msg}");
-        }
 
         private static void Output(
             string msg,
@@ -97,68 +104,50 @@ namespace zb
                 var p = null != path ? $"{Path.GetFileName(path)}" : string.Empty;
                 var f = null != fn ? $"{fn}" : string.Empty;
                 var l = 0 != line ? $"{line}" : string.Empty;
+                Log log = null;
+
+#if MULT_LOGS
                 string fi;
-                
                 if (null != file)
                 {
                     fi = Path.GetFullPath(file).ToLowerInvariant();
+                    if (!LogList.ContainsKey(fi))
+                    {
+                        log = new Log(fi);
+                        LogList.Add(fi, log);
+                    }
+                    else
+                    {
+                        log = LogList[fi];
+                    }
                 }
                 else
                 {
-                    fi = LogFile;
+                    log = MyLog;
                 }
-
-                Log log = null;
-                if (!LogList.ContainsKey(fi))
-                {
-                    log = new Log(fi);
-                    LogList.Add(fi, log);
-                }
-                else
-                {
-                    log = LogList[fi];
-                }
+#else
+                log = MyLog;
+#endif
 
                 var fili = string.IsNullOrWhiteSpace(p) ? string.Empty : $"[{p}({l})::{f}]";
                 log.OutputLog($"[{DateTime.Now}][{lv,-5}]{fili} {msg}");
             }
-            catch(Exception){/* Do Nothing */}
+            catch (Exception) {/* Do Nothing */}
         }
 
         #endregion  // Static Members
 
         #region Instance Memebers
 
-        private string MyFile { get; set; }
-#if LOG_FILE_KEEP_OPENNING
-        private StreamWriter SW { get; set; }
-#endif
 #if LOG_LOCK
         private readonly object locker = new object();
 #endif
 
+        private string MyFile { set; get; }
+
         private Log(string file)
         {
-            if (string.IsNullOrWhiteSpace(file))
-            {
-                throw new ArgumentNullException("Log file could not be null or empty.");
-            }
             MyFile = file;
-#if LOG_FILE_KEEP_OPENNING
-            SW = new StreamWriter(MyFile, true);
-#endif
-        }
-
-        ~Log()
-        {
-            Dispose();
-        }
-
-        private void Dispose()
-        {
-#if LOG_FILE_KEEP_OPENNING
-            if (null != SW) SW.Dispose();
-#endif
         }
 
         private void OutputLog(string msg)
@@ -167,17 +156,16 @@ namespace zb
             lock(locker)
             {
 #endif
-            if (null == msg) return;
-#if !LOG_FILE_KEEP_OPENNING
-                using (StreamWriter fsw = new StreamWriter(MyFile, true))
-                {
-                    fsw.WriteLine(msg);
-                }
-#else
-            SW.WriteLine(msg);
-            SW.Flush();
-#endif
+            if (null == MyFile)
+            {
+                Trace.WriteLine(msg);
+                return;
+            }
 
+            using (StreamWriter fsw = new StreamWriter(MyFile, true))
+            {
+                fsw.WriteLine(msg);
+            }
 #if LOG_LOCK
             }
 #endif
@@ -186,12 +174,6 @@ namespace zb
         #endregion // Instance Members
     }
 
-    ///
-    /// Usually, using a instance of a this class is sufficient.
-    /// However, there has cases that meseauring performance across
-    /// functions or even classes. Using the static methods instead of
-    /// instancial ones may be desired.
-    ///
     public class PerfLog
     {
         #region static Members
@@ -213,17 +195,20 @@ namespace zb
         ///
         /// Wrap the elasped time since last wrapping.
         ///
-        public static void R(string msg, string file = null) => _MyStaticWatch.Wrap(msg, file);
+        public static void R(string msg, string file = null)
+            => _MyStaticWatch.Wrap(msg, file);
 
         ///
 		/// Record elaspsd time without stop the stopwatch
 		///
-        public static void L(string msg, string file = null) => _MyStaticWatch.Elapsed(msg, file);
+        public static void L(string msg, string file = null)
+            => _MyStaticWatch.Elapsed(msg, file);
 
         ///
         /// Record elaspsd time and stop the stopwatch
         ///
-        public static void E() => _MyStaticWatch.Stop();
+        public static void E()
+            => _MyStaticWatch.Stop();
 
         #endregion
 
@@ -249,7 +234,7 @@ namespace zb
             Log.P(msg + $" ({_MyWatch.ElapsedMilliseconds} ms)", file);
         }
 
-        public void Stop() 
+        public void Stop()
         {
             _MyWatch.Stop();
         }
