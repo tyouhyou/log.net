@@ -204,6 +204,9 @@ namespace zb.Lib.Logger
         public static void L(string msg, string file = null)
             => _MyStaticWatch.Elapsed(msg, file);
 
+        public static double P()
+            => _MyStaticWatch.Peek();
+
         ///
         /// Record elaspsd time and stop the stopwatch
         ///
@@ -215,7 +218,7 @@ namespace zb.Lib.Logger
         #region instance members
 
         private Stopwatch _MyWatch = new Stopwatch();
-        private long _LastElaspsed = 0;
+        private double _LastElaspsed = 0;
 
         public void Start()
         {
@@ -224,14 +227,20 @@ namespace zb.Lib.Logger
 
         public void Wrap(string msg, string file = null)
         {
-            var elps = _MyWatch.ElapsedMilliseconds;
-            Log.P(msg + $" ({elps - _LastElaspsed} ms)", file);
+            var elps = _MyWatch.Elapsed.TotalMilliseconds - _LastElaspsed;
+            Log.P(msg + $" ({elps} ms; {elps * 1000000} ns)", file);
             _LastElaspsed = elps;
         }
 
         public void Elapsed(string msg, string file = null)
         {
-            Log.P(msg + $" ({_MyWatch.ElapsedMilliseconds} ms)", file);
+            var elps = _MyWatch.Elapsed.TotalMilliseconds;
+            Log.P(msg + $" ({elps: 0.000} ms; {elps * 1000000: 0.00} ns)", file);
+        }
+
+        public double Peek()
+        {
+            return _MyWatch.Elapsed.TotalMilliseconds;
         }
 
         public void Stop()
